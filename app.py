@@ -1,0 +1,46 @@
+import streamlit as st
+from model import process_input
+
+
+st.title("AdvisorAI")
+st.write("An AI-powered academic advisor for University of Florida students built by Jason Tenczar")
+
+
+
+reset_chat = st.button("New Conversation")
+st.divider()
+
+with st.chat_message(name="assistant"):
+    st.write("👋 Hello I'm Alberta, your personal student advisor! Welcome to AdvisorAI. How may I help you today?")
+
+
+# pull chat history from local storage
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+
+
+#respond to user prompt
+if prompt := st.chat_input("What is up?"):
+    #prompt the model with user chat message
+    with st.chat_message("user"):
+        st.write(prompt)
+    #add prompt to chat history
+    st.session_state.messages.append({"role": "user", "content": prompt})
+
+    response = process_input(prompt)
+    #add response to chat history
+    with st.chat_message("assistant"):
+        st.markdown(response)
+
+    st.session_state.messages.append({"role": "assistant", "content": response})
+
+
+
+
+

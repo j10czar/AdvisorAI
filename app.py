@@ -1,15 +1,23 @@
 import streamlit as st
 from model import process_input
 
+st.set_page_config(
+    page_title="AdvisorAI",
+    page_icon="🐊",
+    layout="centered",
+    initial_sidebar_state="collapsed",
+)
 
-st.title("AdvisorAI")
+st.title("🐊 AdvisorAI")
 st.write("An AI-powered academic advisor for University of Florida students built by Jason Tenczar")
 
 
 
-reset_chat = st.button("New Conversation")
-st.divider()
+if st.button("New Conversation"):
+    st.session_state.messages = []  # Clear chat history
+    st.experimental_rerun()
 
+st.divider()
 with st.chat_message(name="assistant"):
     st.write("👋 Hello I'm Alberta, your personal student advisor! Welcome to AdvisorAI. How may I help you today?")
 
@@ -26,7 +34,7 @@ for message in st.session_state.messages:
 
 
 #respond to user prompt
-if prompt := st.chat_input("What is up?"):
+if prompt := st.chat_input("How may I help you?"):
     #prompt the model with user chat message
     with st.chat_message("user"):
         st.write(prompt)

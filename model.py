@@ -1,65 +1,127 @@
+# import streamlit as st
+# from langchain_community.document_loaders import WebBaseLoader
+# from langchain_community.vectorstores import Chroma
+# from langchain_community.embeddings import OllamaEmbeddings
+# from langchain_community.llms import Ollama
+# from langchain_core.runnables import RunnablePassthrough
+# from langchain_core.output_parsers import StrOutputParser
+# from langchain_core.prompts import ChatPromptTemplate
+# from langchain.text_splitter import CharacterTextSplitter 
+
+
+# #initalize the model and process UF URLs for advising data
+
+# def process_input(prompt):
+#     #call the local model (must set this up before running locally)
+
+#     urls = """https://catalog.ufl.edu/UGRD/academic-advising/"""
+#     model_local = Ollama(model='mistral')
+
+#     url_list = urls.split("\n")
+
+#     #Uses webbase loader to load the data from each URL
+#     docs = [WebBaseLoader(url).load() for url in url_list]
+#     data_list = [item for sublist in docs for item in sublist]
+
+
+#     #chunk documents
+#     text_splitter = CharacterTextSplitter.from_tiktoken_encoder(chunk_size=7500, chunk_overlap=100)
+#     data_split = text_splitter.split_documents(data_list)
+
+
+#     #convert chunks into enbeddings to put in vector database
+
+#     vectorstore = Chroma.from_documents(
+#         documents=data_split,
+#         collection_name = 'rag_chroma',
+#         embedding=OllamaEmbeddings(model='nomic-embed-text'),
+#     )
+
+#     #convert vectorstore to retriever
+#     retriever = vectorstore.as_retriever()
+
+#     #give the model instructions
+#     after_rag_template = """You can make your reponses in markdown. 
+#      you are an academic advisor for the University of florida receiving prompts from a student,
+#       you will assist students using the information that is provided to you
+#         answer the question based only on the following text found from the UF website,"""
+  
+#     after_rag_prompt = ChatPromptTemplate.from_template(after_rag_template)
+#     after_rag_chain = (
+#         {"context": retriever, "question": RunnablePassthrough()}
+#         | after_rag_prompt
+#         | model_local
+#         | StrOutputParser()
+#     )
+
+#     return after_rag_chain.invoke(prompt)
+
+
+
+
+
+
 import streamlit as st
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_community.llms import Ollama
-from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
 from langchain.text_splitter import CharacterTextSplitter 
 
-
-#initalize the model and process UF URLs for advising data
-
 def process_input(prompt):
-    #call the local model (must set this up before running locally)
-
-    urls = """https://catalog.ufl.edu/UGRD/academic-advising/"""
+    # Initialize the model
     model_local = Ollama(model='mistral')
+
+    # URL containing UF advising data
+    urls = """https://catalog.ufl.edu/UGRD/academic-advising/"""
 
     url_list = urls.split("\n")
 
-    #Uses webbase loader to load the data from each URL
+    # Load data from each URL
     docs = [WebBaseLoader(url).load() for url in url_list]
     data_list = [item for sublist in docs for item in sublist]
 
-
-    #chunk documents
+    # Chunk documents
     text_splitter = CharacterTextSplitter.from_tiktoken_encoder(chunk_size=7500, chunk_overlap=100)
     data_split = text_splitter.split_documents(data_list)
 
-
-    #convert chunks into enbeddings to put in vector database
-
+    # Convert chunks into embeddings to put in vector database
     vectorstore = Chroma.from_documents(
         documents=data_split,
-        collection_name = 'rag_chroma',
+        collection_name='rag_chroma',
         embedding=OllamaEmbeddings(model='nomic-embed-text'),
     )
 
-    #convert vectorstore to retriever
+    # Convert vectorstore to retriever
     retriever = vectorstore.as_retriever()
 
-    #give the model instructions
-    after_rag_template = """You can make your reponses in markdown. answer the question based only on the following text,
-     you are an academic advisor for the University of florida,
-      you will assist students using the information that is provided to you
-       Only If the student asks for information relative to building a schedule, you will take the data from the websites provided and build a schedule for the student using the courses the student provided to you when you ask.
-        If the student asks for info that is not relavant to academic advising you will ask that the conversation is kept to advising."""
+    # Retrieve relevant documents based on the user's question
+    context_docs = retriever.get_relevant_documents(prompt)
+    context = "\n\n".join([doc.page_content for doc in context_docs])
 
+    # Define the prompt template with placeholders
+    after_rag_template = """
+You can make your responses in markdown.
 
-    after_rag_prompt = ChatPromptTemplate.from_template(after_rag_template)
-    after_rag_chain = (
-        {"context": retriever, "question": RunnablePassthrough()}
-        | after_rag_prompt
-        | model_local
-        | StrOutputParser()
-    )
+You are an academic advisor for the University of Florida receiving prompts from a student. You will assist students using the information that is provided to you.
 
-    return after_rag_chain.invoke(prompt)
+Answer the question based only on the following text from the UF website:
 
+{context}
 
+Question: {question}
 
+Answer:
+"""
 
+    # Format the prompt using Python's string formatting
+    prompt_input = after_rag_template.format(context=context, question=prompt)
 
+    # Call the model with the formatted string
+    response = model_local(prompt_input)
 
+    # Parse the output
+    answer = StrOutputParser().parse(response)
+
+    return answer

@@ -51,9 +51,8 @@ if prompt := st.chat_input("How may I help you?"):
     #add prompt to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-
-
-    response = process_input(prompt, st.session_state.messages)
+    with st.status("Thinking..."):
+        response = process_input(prompt, st.session_state.messages)
     #add response to chat history
     with st.chat_message("assistant"):
         st.markdown(response)

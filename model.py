@@ -49,6 +49,8 @@ Answer the question based only on the following text from the UF website:
 
 Question: {question}
 
+Conversation History: {conversation_history}
+
 Answer:
 """
 

@@ -1,6 +1,5 @@
 # AdvisorAI
-A AI powered UF academic advisor
-<br/>
+
 <img width="721" alt="image" src="https://github.com/user-attachments/assets/c3895c53-4aec-47af-bd12-22240e0eab4c">
 
 <br/>

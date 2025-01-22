@@ -11,7 +11,10 @@ def process_input(prompt, conversation_history):
     model_local = Ollama(model='mistral')
 
     # URL containing UF advising data
-    urls = """https://catalog.ufl.edu/UGRD/academic-advising/"""
+    urls = """https://catalog.ufl.edu/UGRD/academic-advising/
+            https://catalog.ufl.edu/UGRD/programs/
+            https://clas.ufl.edu/undergraduate/
+            https://www.cise.ufl.edu/academics/advising-information/"""
 
     url_list = urls.split("\n")
 
